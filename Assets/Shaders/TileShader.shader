@@ -1,39 +1,34 @@
 ﻿Shader "Sprites/Tile" {
-    Properties 
-    {
+    Properties {
         _Color ("Main Color", Color) = (1,1,1,1)
         _MainTex ("Base (RGB) Alpha (A)", 2D) = "white" {}
     }
-    SubShader 
-    {
+    SubShader  {
     
-        Tags {"Queue" = "Geometry" "RenderType" = "Opaque"}
-        Pass 
-        {
-            Tags {"LightMode" = "ForwardBase"}                      // This Pass tag is important or Unity may not give it the correct light information.
-				ZWrite off
+        Tags {
+            "Queue" = "Transparent"
+            "RenderType" = "Opaque"
+        }
+
+        Pass {
+                Tags {
+                    "LightMode" = "ForwardBase"
+                }
+                ZWrite off
            		CGPROGRAM
                 #pragma vertex vert
                 #pragma fragment frag
-                #pragma multi_compile_fwdbase                       // This line tells Unity to compile this pass for forward base.
+                #pragma multi_compile_fwdbase
                 
                 #include "UnityCG.cginc"
                 #include "AutoLight.cginc"
-               
-               	struct vertex_input
-               	{
-               		float4 vertex : POSITION;
-               		float3 normal : NORMAL;
-               		float2 texcoord : TEXCOORD0;
-               	};
                 
-                struct vertex_output
-                {
+                struct v2f {
                     float4  pos         : SV_POSITION;
                     float2  uv          : TEXCOORD0;
                     float3  lightDir    : TEXCOORD1;
                     float3  normal		: TEXCOORD2;
-                    LIGHTING_COORDS(3,4)                            // Macro to send shadow & attenuation to the vertex shader.
+                    LIGHTING_COORDS(3,4)
                 	float3  vertexLighting : TEXCOORD5;
                 };
                 
@@ -42,27 +37,23 @@
                 fixed4 _Color;
                 fixed4 _LightColor0; 
                 
-                vertex_output vert (vertex_input v)
-                {
-                    vertex_output o;
-                    o.pos = UnityObjectToClipPos( v.vertex);
+                v2f vert (appdata_base v) {
+                    v2f o;
+                    o.pos = UnityObjectToClipPos(v.vertex);
                     o.uv = v.texcoord.xy;
-					
 					o.lightDir = ObjSpaceLightDir(v.vertex);
-					
 					o.normal = v.normal;
                     
-                    TRANSFER_VERTEX_TO_FRAGMENT(o);                 // Macro to send shadow & attenuation to the fragment shader.
-                    
+                    TRANSFER_VERTEX_TO_FRAGMENT(o);
+
                     o.vertexLighting = float3(0.0, 0.0, 0.0);
 		            
 		            #ifdef VERTEXLIGHT_ON
   					
-  					float3 worldN = mul((float3x3)unity_ObjectToWorld, SCALED_NORMAL);
+  					float3 worldNormal = mul((float3x3)unity_ObjectToWorld, SCALED_NORMAL);
 		          	float4 worldPos = mul(unity_ObjectToWorld, v.vertex);
 		            
-		            for (int index = 0; index < 4; index++)
-		            {    
+		            for (int index = 0; index < 4; index++) {    
 		               float4 lightPosition = float4(unity_4LightPosX0[index], 
 		                  unity_4LightPosY0[index], 
 		                  unity_4LightPosZ0[index], 1.0);
@@ -75,20 +66,17 @@
 		               
 		               float attenuation = 1.0 / (1.0  + unity_4LightAtten0[index] * squaredDistance);
 		               
-		               float3 diffuseReflection = attenuation * float3(unity_LightColor[index]) 
-		                  * float3(_Color) * max(0.0, dot(worldN, lightDirection));         
+		               float3 diffuseReflection = attenuation * float3(unity_LightColor[index]) * float3(_Color) * max(0.0, dot(worldN, lightDirection));         
 		 
 		               o.vertexLighting = o.vertexLighting + diffuseReflection * 2;
 		            }
 		                  
-		         
 		            #endif
                     
                     return o;
                 }
                 
-                fixed4 frag(vertex_output i) : COLOR
-                {
+                fixed4 frag(v2f i) : COLOR {
                     i.lightDir = normalize(i.lightDir);
                     fixed atten = LIGHT_ATTENUATION(i); // Macro to get you the combined shadow & attenuation value.
                     
@@ -105,7 +93,7 @@
                 }
             ENDCG
         }
- /*
+ 
         Pass {
             Tags {
 				"LightMode" = "ForwardAdd"
@@ -172,7 +160,7 @@
                     return c;
                 }
             ENDCG
-        }*/
+        }
     }
 }//Shader
 
