@@ -1,2 +1,2 @@
-# TexelLightningShader
-Texel-based lightning shader written in Unity shader script
+# TexelLightingShader
+Texel-based lighting shader written in Unity shader script
